@@ -23,6 +23,7 @@ public class Main {
     // There can be a lot of Files with different path's and the same Hash.
     private static final Map<String, List<File>> MAP = new HashMap<>();
 
+
     // Nullable
     public static byte[] toByteArray(File in) throws IOException {
         FileInputStream fis = new FileInputStream(in);
@@ -38,6 +39,9 @@ public class Main {
         return output.toByteArray();
     }
 
+    /**
+     * Gets the MD5 hash from a file using {@link MessageDigest}
+     */
     private static String getFileChecksum(MessageDigest digest, File file) throws IOException {
         // Convert the file data to a byte array.
         byte[] fileData = toByteArray(file);
@@ -59,6 +63,22 @@ public class Main {
         return sb.toString();
     }
 
+    //Gets a Directory from the user, if the directory is invalid it will ask the user again.
+    private static File getDirectoryFromUser(String message) {
+        File file = null;
+        Scanner in = new Scanner(System.in);
+        // Check if the file exists, or if it's a directory
+        // Will continue to get input until parameters are met.
+        while (file == null || !file.exists() || !file.isDirectory()) {
+            System.out.print(message);
+            // Get input from console.
+            String path = in.nextLine();
+
+            // Create a new file everytime to check the parameters
+            file = new File(path);
+        }
+        return file;
+    }
 
     /**
      * Traverses though a directory using recursion, then adds any files found in a HashMap.
@@ -103,21 +123,7 @@ public class Main {
 
 
     public static void main(String[] args) {
-        Scanner in = new Scanner(System.in);
-
-        String path = "C:\\Users\\Bailey\\Desktop\\testing";
-        File file = new File(path);
-
-        // Check if the file exists, or if it's a directory
-        // Will continue to get input until parameters are met.
-        while (!file.exists() || !file.isDirectory()) {
-            System.out.print("Directory Path: ");
-            // Get input from console.
-            path = in.nextLine();
-
-            // Create a new file everytime to check the parameters
-            file = new File(path);
-        }
+        File file = getDirectoryFromUser("Directory Path to search: ");
 
         try {
             // Only check directories for files.
@@ -131,14 +137,12 @@ public class Main {
                 // if there's duplicates of the same file
                 // compress and store them in a .zip.
                 if (MAP.size() > 0) {
-                    // Create a new zip file in the directory above.
-
-                    File zipFile = new File(file.getParent() + "/Copies.zip");
-
+                    File out = getDirectoryFromUser("Output Path: ");
+                    File zipFile = new File(out + "/Copies.zip");
                     ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()));
 
                     for (Map.Entry<String, List<File>> entry : MAP.entrySet()) {
-                        // Continue on if there's only 1 file.
+                        // Continue on if there's only 1 file in the list.
                         if (entry.getValue().size() <= 1) {
                             continue;
                         }
@@ -146,11 +150,11 @@ public class Main {
                         for (File f : entry.getValue()) {
                             byte[] data = toByteArray(f);
 
-                            if (!f.isFile() || data == null) {
+                            if (!f.isFile()) {
                                 continue;
                             }
 
-                            System.out.println("Writing " + f.getAbsolutePath());
+                            System.out.println("Compressing " + f.getAbsolutePath());
 
                             // Create a new ZipEntry, basically tells .zip it's a chunk we are writing to.
                             zip.putNextEntry(new ZipEntry(f.getName()));
@@ -159,16 +163,17 @@ public class Main {
 
                             // End it.
                             zip.closeEntry();
+
                             if (f.delete()) {
-                                System.out.println("Successfully wrote, deleting copy");
+                                System.out.println("Successfully compressed, deleting copy");
                             }
                         }
-
-
-
                     }
                     zip.finish();
                     zip.close();
+                }
+                else {
+                    System.out.println("Found no copies.");
                 }
             }
         }
