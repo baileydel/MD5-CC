@@ -1,5 +1,5 @@
 /**
- * @author Bailey Delker
+ * @author baileydel
  * @created 12/27/2022 - 11:14 PM
  * @project MD5 CC
  *
@@ -112,7 +112,7 @@ public class Main {
                 list.add(f);
                 MAP.put(hash, list);
 
-                System.out.println("Adding " + hash + ", " + f.getName());
+                System.out.println("[+] " + hash + ", " + f.getName());
             }
             else {
                 // It's a directory, call checkFiles() again.
@@ -137,24 +137,27 @@ public class Main {
                 // if there's duplicates of the same file
                 // compress and store them in a .zip.
                 if (MAP.size() > 0) {
-                    File out = getDirectoryFromUser("Output Path: ");
+                    File out = getDirectoryFromUser("\nOutput Path: ");
                     File zipFile = new File(out + "/Copies.zip");
                     ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()));
 
                     for (Map.Entry<String, List<File>> entry : MAP.entrySet()) {
+                        List<File> files = entry.getValue();
                         // Continue on if there's only 1 file in the list.
-                        if (entry.getValue().size() <= 1) {
+                        if (files.size() <= 1) {
                             continue;
                         }
 
-                        for (File f : entry.getValue()) {
+                        // Start at index 1 to skip the first file found.
+                        for (int i = 1 ; i < files.size(); i++) {
+                            File f = files.get(i);
                             byte[] data = toByteArray(f);
 
                             if (!f.isFile()) {
                                 continue;
                             }
 
-                            System.out.println("Compressing " + f.getAbsolutePath());
+                            System.out.println("[~] Compressing " + f.getName());
 
                             // Create a new ZipEntry, basically tells .zip it's a chunk we are writing to.
                             zip.putNextEntry(new ZipEntry(f.getName()));
@@ -164,8 +167,8 @@ public class Main {
                             // End it.
                             zip.closeEntry();
 
-                            if (f.delete()) {
-                                System.out.println("Successfully compressed, deleting copy");
+                            if (!f.delete()) {
+                                System.out.println("[!] Failed to delete " + f.getAbsolutePath());
                             }
                         }
                     }
@@ -173,7 +176,7 @@ public class Main {
                     zip.close();
                 }
                 else {
-                    System.out.println("Found no copies.");
+                    System.out.println("[!] No Copies found.");
                 }
             }
         }
